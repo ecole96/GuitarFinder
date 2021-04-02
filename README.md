@@ -19,7 +19,7 @@ Currently, the following marketplaces are scanned:
 
 ## Requirements
 * Python 3
-* Mac OS 10+ 
+* Mac OS 10.10+
 
 Use is currently limited to Mac OS due to the specialized notifications library used. 
 
