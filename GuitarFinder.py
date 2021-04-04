@@ -9,10 +9,10 @@ from bs4 import BeautifulSoup
 import tldextract
 import requests
 import sqlite3
+import furl
 import pync
 import sys
 import os
-my_absolute_dirpath = os.path.abspath(os.path.dirname(__file__))
 
 # download web page, return as BeautifulSoup object for parsing
 def download(url):
@@ -30,16 +30,19 @@ def getDomain(url):
 def agf():
     url = "https://www.acousticguitarforum.com/forums/forumdisplay.php?f=17&daysprune=1&order=desc&sort=lastpost"
     listings = []
+    BASE_URL = "https://www.acousticguitarforum.com/forums/"
     try:
         soup = download(url)
-        listings = [(a.text.strip(),"https://www.acousticguitarforum.com/forums/"+a['href']) 
-                    for a in 
-                        [thread.select_one("a[id*='thread_title']") 
-                            for thread in 
-                            soup.select("td[id*='td_threadtitle'] > div:nth-of-type(1)") 
-                            if thread.text.strip().lower().startswith('for sale')
-                        ]
-                   ]
+        threads = [thread.select_one("a[id*='thread_title']") for thread in 
+                   soup.select("td[id*='td_threadtitle'] > div:nth-of-type(1)") 
+                   if thread.text.strip().lower().startswith('for sale')
+                  ]
+        for thread in threads:
+            thread_title = thread.text.strip()
+            f = furl.furl(BASE_URL + thread['href'])
+            f.remove(['s']) # remove 's' query string from URL (it's some kind of unique identifier - therefore, the URL will not be the same as it was last run and will result in a repeated notification)
+            url = f.url
+            listings.append((thread_title,url))
     except Exception as e:
         print(e)
     return listings
@@ -64,10 +67,11 @@ def tgp():
     urls = ["https://www.thegearpage.net/board/index.php?forums/guitar-emporium.22/&prefix_id=1&last_days=7&order=post_date&direction=desc",
             "https://www.thegearpage.net/board/index.php?forums/guitar-emporium.22/&prefix_id=3&last_days=7&order=post_date&direction=desc"]
     listings = []
+    BASE_URL = "https://www.thegearpage.net"
     for url in urls:
         try:
             soup = download(url)
-            page_listings = [(a.text.strip(),"https://www.thegearpage.net"+a['href']) for a in soup.select("div.structItem-title a:nth-of-type(2)")]
+            page_listings = [(a.text.strip(),BASE_URL+a['href']) for a in soup.select("div.structItem-title a:nth-of-type(2)")]
             listings += page_listings
         except Exception as e:
             print(e)
